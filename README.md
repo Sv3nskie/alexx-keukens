@@ -24,8 +24,9 @@ All links are relative, so the site works at any sub-path (project pages) or on 
 
 ## Before launch
 
-- **Photos** — `img/*.jpg` are low-resolution stand-ins from the old site (~250×180 px; hero 1140×419).
-  Replace with the client's originals (≥1600 px wide), same filenames, and add `srcset` if desired.
+- **Photos** — the client's own photographs (Google Drive, Sept 2026), resized to 1600 px wide
+  (hero 2000 px) at quality 82. Thirteen selected out of 165; the originals are 4000 px if larger
+  versions or a different selection are ever needed.
 - **Contact form** — on GitHub Pages there is no backend. The form currently shows the success state client-side only.
   To make it send, put a Formspree / Basin / Getform endpoint in `data-endpoint=""` on the `<form>` in `contact.html`;
   `main.js` will POST the fields (`naam`, `email`, `telefoon`, `interesse`, `vraag`) and show the success panel on 2xx.
@@ -37,6 +38,12 @@ All links are relative, so the site works at any sub-path (project pages) or on 
 
 - Colours, type, spacing and copy follow the prototype (`Alex Keukens.dc.html`) verbatim. Where the handoff README and
   the prototype disagreed (step 1 title, number of FAQ items, closing CTA text), the prototype was followed.
+- **The `mix-blend-mode: lighten` treatment on photos was dropped.** It was designed for the washed-out placeholder
+  stand-ins; on the client's real photography it turns every black (hobs, ovens, dark fronts) olive-green.
+  The `.lighten` class is still defined in `styles.css` — re-add it to the `<img>` tags to restore the original look.
+- Copy reflects the client's "Teks aanpassingen" (Sept 2026): Alexx no longer does complete renovations.
+  No tiling or plastering is mentioned anywhere; the site now says they distribute water/gas/electricity
+  and drill the 160 mm extraction duct, and finish the wall in the worktop material, ceramic or composite.
 - The gallery loops by cloning the 6 cards twice and normalising `scrollLeft`; native swipe / trackpad scrolling works.
 - The lightbox has `aria-modal`, Esc / arrow keys, a focus trap and restores focus on close.
 - Under 800 px the nav collapses into a drawer (the prototype had no mobile menu — remove the `.nav-toggle` rules to go back to wrapping links).

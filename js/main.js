@@ -4,13 +4,19 @@
   'use strict';
 
   var PHOTOS = [
-    { id: 'keuken-hero',            src: 'img/keuken-hero.jpg',            caption: 'Wit hoogglans keuken met kookeiland en betonlook werkblad' },
-    { id: 'keuken-wit-hoek',        src: 'img/keuken-wit-hoek.jpg',        caption: 'Witte hoekkeuken, strak, met betonlook werkblad' },
-    { id: 'keuken-grijs-hoogglans', src: 'img/keuken-grijs-hoogglans.jpg', caption: 'Grijs hoogglans keuken met eikenlook wandkasten' },
-    { id: 'keuken-magnolia',        src: 'img/keuken-magnolia.jpg',        caption: 'Magnolia matlak keuken met betonlook werkblad' },
-    { id: 'kast-schuifdeur-spiegel',src: 'img/kast-schuifdeur-spiegel.jpg',caption: 'Maatwerk schuifdeurkast met spiegel en houtstructuur' },
-    { id: 'kast-inloopkast',        src: 'img/kast-inloopkast.jpg',        caption: 'Inloopkast met maatwerk kastinterieur' },
-    { id: 'kast-wandmeubel',        src: 'img/kast-wandmeubel.jpg',        caption: 'Maatwerk wandmeubel met bureau en boekenkast' }
+    { id: 'keuken-eiland-blauwgrijs'    , src: 'img/keuken-eiland-blauwgrijs.jpg',     caption: 'Kookeiland in blauwgrijs met zwart keramisch werkblad en wijnklimaatkast' },
+    { id: 'keuken-keramiek-marmerlook'  , src: 'img/keuken-keramiek-marmerlook.jpg',   caption: 'Greeploze witte keuken met keramische wand in marmerlook' },
+    { id: 'keuken-eiland-keramisch-blad', src: 'img/keuken-eiland-keramisch-blad.jpg', caption: 'Antraciet kookeiland met keramisch werkblad' },
+    { id: 'keuken-antraciet-natuursteen', src: 'img/keuken-antraciet-natuursteen.jpg', caption: 'Antraciete keuken met natuursteenlook werkblad' },
+    { id: 'keuken-groen-eiland'         , src: 'img/keuken-groen-eiland.jpg',          caption: 'Zachtgroene greeploze keuken met kookeiland' },
+    { id: 'keuken-houtstructuur'        , src: 'img/keuken-houtstructuur.jpg',         caption: 'Keuken in houtstructuur met zwart werkblad' },
+    { id: 'keuken-zand-eiland'          , src: 'img/keuken-zand-eiland.jpg',           caption: 'Zandkleurige keuken met kookeiland en visgraatvloer' },
+    { id: 'kast-schuifdeur-spiegel'     , src: 'img/kast-schuifdeur-spiegel.jpg',      caption: 'Maatwerk schuifdeurkast met houtdecor panelen en spiegel' },
+    { id: 'kast-inloopkast'             , src: 'img/kast-inloopkast.jpg',              caption: 'Inloopkast met maatwerk interieur: laden, roedes en open vakken' },
+    { id: 'kast-wandmeubel-bureau'      , src: 'img/kast-wandmeubel-bureau.jpg',       caption: 'Maatwerk wandmeubel met bureau en boekenkast' },
+    { id: 'kast-schuifdeur-greeploos'   , src: 'img/kast-schuifdeur-greeploos.jpg',    caption: 'Greeploze schuifdeurkast van vloer tot plafond' },
+    { id: 'kast-halkast-hout'           , src: 'img/kast-halkast-hout.jpg',            caption: 'Halkast in houtdecor met open vakken' },
+    { id: 'kast-tv-wandmeubel'          , src: 'img/kast-tv-wandmeubel.jpg',           caption: 'Zwevend tv-wandmeubel met open kast' }
   ];
 
   /* ---------------------------------------------------------------- nav */
