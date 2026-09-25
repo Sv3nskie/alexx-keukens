@@ -1,0 +1,10 @@
+# Server files must keep Unix line endings — Apache and PHP are uploaded as-is.
+*           text=auto eol=lf
+.htaccess   text eol=lf
+*.php       text eol=lf
+*.html      text eol=lf
+*.css       text eol=lf
+*.js        text eol=lf
+*.jpg       binary
+*.png       binary
+*.svg       text eol=lf

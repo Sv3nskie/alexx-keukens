@@ -26,7 +26,7 @@ from pathlib import Path
 # Files that live in the repo but must never reach the webserver.
 EXCLUDE_NAMES = {
     '.git', '.gitignore', '.nojekyll', 'deploy.py', '_router.php',
-    'README.md', 'htaccess-alexxinterieur.txt', '.pw',
+    'README.md', 'htaccess-alexxinterieur.txt', '.pw', '.gitattributes',
 }
 EXCLUDE_SUFFIX = {'.md', '.bak', '.log'}
 LOCAL = Path(__file__).resolve().parent
