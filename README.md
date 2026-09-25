@@ -42,8 +42,9 @@ All links are relative, so the site works at any sub-path (project pages) or on 
   stand-ins; on the client's real photography it turns every black (hobs, ovens, dark fronts) olive-green.
   The `.lighten` class is still defined in `styles.css` — re-add it to the `<img>` tags to restore the original look.
 - Copy reflects the client's "Teks aanpassingen" (Sept 2026): Alexx no longer does complete renovations.
-  No tiling or plastering is mentioned anywhere; the site now says they distribute water/gas/electricity
-  and drill the 160 mm extraction duct, and finish the wall in the worktop material, ceramic or composite.
+  Tiling and plastering are not mentioned anywhere — not even to say they are no longer offered; the site
+  states positively what Alexx does: distribute water/gas/electricity, drill the 160 mm extraction duct,
+  and finish the wall in the worktop material, ceramic or composite.
 - The gallery loops by cloning the 6 cards twice and normalising `scrollLeft`; native swipe / trackpad scrolling works.
 - The lightbox has `aria-modal`, Esc / arrow keys, a focus trap and restores focus on close.
 - Under 800 px the nav collapses into a drawer (the prototype had no mobile menu — remove the `.nav-toggle` rules to go back to wrapping links).
