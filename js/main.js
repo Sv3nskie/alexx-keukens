@@ -107,10 +107,31 @@
     var lbPrev = lb.querySelector('[data-lb-prev]');
     var lbNext = lb.querySelector('[data-lb-next]');
     var index = -1;
+    var list = PHOTOS;          // the set being stepped through right now
     var lastFocus = null;
 
+    // The photos of the gallery that was clicked — not every photo on the site.
+    // The home strip repeats its cards three times for the seamless loop, so
+    // identical ids are collapsed.
+    var groupFor = function (fig) {
+      var scope = fig.closest('[data-gallery]') || fig.closest('.tile-grid');
+      var ids = scope
+        ? Array.prototype.map.call(scope.querySelectorAll('[data-photo]'),
+            function (el) { return el.getAttribute('data-photo'); })
+        : [fig.getAttribute('data-photo')];
+      var seen = {}, out = [];
+      ids.forEach(function (id) {
+        if (seen[id]) return;
+        seen[id] = 1;
+        for (var k = 0; k < PHOTOS.length; k++) {
+          if (PHOTOS[k].id === id) { out.push(PHOTOS[k]); break; }
+        }
+      });
+      return out.length ? out : PHOTOS;
+    };
+
     var render = function () {
-      var p = PHOTOS[index];
+      var p = list[index];
       lbImg.src = p.src;
       lbImg.alt = p.caption;
       lbCap.textContent = p.caption;
@@ -125,7 +146,7 @@
       lastFocus = document.activeElement;
       lb.hidden = false;
       document.body.classList.add('lb-open');
-      lbNext.focus();
+      (lbNext.hidden ? lb : lbNext).focus();
     };
     var close = function () {
       lb.hidden = true;
@@ -134,16 +155,23 @@
       if (lastFocus && lastFocus.focus) lastFocus.focus();
     };
     var stepTo = function (d) {
-      index = (index + d + PHOTOS.length) % PHOTOS.length;
+      index = (index + d + list.length) % list.length;
       render();
     };
 
     document.addEventListener('click', function (e) {
       var fig = e.target.closest('[data-photo]');
       if (!fig) return;
+      var id = fig.getAttribute('data-photo');
+      list = groupFor(fig);
       var i = -1;
-      for (var k = 0; k < PHOTOS.length; k++) if (PHOTOS[k].id === fig.getAttribute('data-photo')) { i = k; break; }
-      if (i >= 0) open(i);
+      for (var k = 0; k < list.length; k++) if (list[k].id === id) { i = k; break; }
+      if (i < 0) return;
+      // a lone photo (the hero) has nothing to step to
+      var solo = list.length < 2;
+      lbPrev.hidden = solo;
+      lbNext.hidden = solo;
+      open(i);
     });
     lb.addEventListener('click', function (e) {
       if (e.target.closest('.lightbox-nav') || e.target === lbImg) return;
