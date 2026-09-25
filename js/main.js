@@ -46,6 +46,22 @@
     else window.addEventListener('resize', setBar);
   }
 
+  /* ------------------------------------------------- hero crossfade */
+  var heroStack = document.querySelector('.hero-stack');
+  if (heroStack) {
+    var slides = heroStack.querySelectorAll('.hero-slide');
+    var slideReduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (slides.length > 1 && !slideReduce.matches) {
+      var at = 0;
+      setInterval(function () {
+        if (document.hidden || document.body.classList.contains('lb-open')) return;
+        slides[at].classList.remove('is-active');
+        at = (at + 1) % slides.length;
+        slides[at].classList.add('is-active');
+      }, 5200);
+    }
+  }
+
   /* ------------------------------------------------ infinite gallery */
   var track = document.querySelector('[data-gallery]');
   if (track && track.children.length > 1) {
@@ -92,11 +108,60 @@
     };
     var prevBtn = wrap.querySelector('.gal-prev');
     var nextBtn = wrap.querySelector('.gal-next');
-    if (prevBtn) prevBtn.addEventListener('click', function () { go(-1); });
-    if (nextBtn) nextBtn.addEventListener('click', function () { go(1); });
+    if (prevBtn) prevBtn.addEventListener('click', function () { go(-1); nudge(); });
+    if (nextBtn) nextBtn.addEventListener('click', function () { go(1); nudge(); });
 
     measure();
     window.addEventListener('load', measure);
+
+    /* ---- autoplay -------------------------------------------------------
+       Advances one card at a time. Pauses while the visitor is pointing at
+       it, dragging it, tabbing through it, reading a photo full screen, or
+       looking at another tab. Off entirely for reduced-motion users.       */
+    var STEP_MS = 3800;
+    var timer = 0;
+    var held = 0;                    // >0 while the visitor is interacting
+    var resumeT = 0;
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    var canRun = function () {
+      return !held && !document.hidden && !document.body.classList.contains('lb-open');
+    };
+    var tick = function () { if (canRun()) go(1); };
+    var start = function () {
+      if (reduce.matches || timer) return;
+      timer = setInterval(tick, STEP_MS);
+    };
+    var stop = function () { clearInterval(timer); timer = 0; };
+    // restart the countdown so a manual move isn't followed instantly by one
+    function nudge() { stop(); start(); }
+
+    var hold = function () { held++; };
+    var release = function (delay) {
+      clearTimeout(resumeT);
+      resumeT = setTimeout(function () { held = Math.max(0, held - 1); nudge(); }, delay || 0);
+    };
+
+    wrap.addEventListener('mouseenter', hold);
+    wrap.addEventListener('mouseleave', function () { release(0); });
+    wrap.addEventListener('focusin', hold);
+    wrap.addEventListener('focusout', function () { release(0); });
+    // touch / trackpad: hold while dragging, resume shortly after letting go
+    track.addEventListener('pointerdown', hold);
+    window.addEventListener('pointerup', function () { release(1200); });
+    track.addEventListener('touchstart', hold, { passive: true });
+    track.addEventListener('touchend', function () { release(1200); }, { passive: true });
+    var wheelT = 0;
+    track.addEventListener('wheel', function () {
+      if (!wheelT) hold();
+      clearTimeout(wheelT);
+      wheelT = setTimeout(function () { wheelT = 0; release(0); }, 700);
+    }, { passive: true });
+
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) nudge(); });
+    if (reduce.addEventListener) reduce.addEventListener('change', function () { reduce.matches ? stop() : start(); });
+
+    start();
   }
 
   /* ------------------------------------------------------- lightbox */
@@ -114,7 +179,7 @@
     // The home strip repeats its cards three times for the seamless loop, so
     // identical ids are collapsed.
     var groupFor = function (fig) {
-      var scope = fig.closest('[data-gallery]') || fig.closest('.tile-grid');
+      var scope = fig.closest('[data-gallery]') || fig.closest('.tile-grid') || fig.closest('.hero-stack');
       var ids = scope
         ? Array.prototype.map.call(scope.querySelectorAll('[data-photo]'),
             function (el) { return el.getAttribute('data-photo'); })
@@ -192,6 +257,51 @@
         else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
         else if (!lb.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
       }
+    });
+  }
+
+  /* ----------------------------------------------------------- FAQ */
+  /* <details> can't animate on its own, so the open/close is driven here.
+     Opening one closes the others. Without JS the rows still work. */
+  var faqRows = document.querySelectorAll('.faq details');
+  if (faqRows.length) {
+    var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    var slide = function (row, opening, done) {
+      var body = row.querySelector('.faq-body');
+      if (!body || reduceMotion.matches) { row.open = opening; if (done) done(); return; }
+      if (opening) row.open = true;
+      var from = opening ? 0 : body.scrollHeight;
+      var to = opening ? body.scrollHeight : 0;
+      body.style.height = from + 'px';
+      body.style.transition = 'none';
+      requestAnimationFrame(function () {
+        body.style.transition = 'height ' + (opening ? 280 : 220) + 'ms cubic-bezier(.2,.7,.2,1)';
+        body.style.height = to + 'px';
+      });
+      var end = function (e) {
+        if (e && e.propertyName !== 'height') return;
+        body.removeEventListener('transitionend', end);
+        body.style.height = '';
+        body.style.transition = '';
+        if (!opening) row.open = false;
+        if (done) done();
+      };
+      body.addEventListener('transitionend', end);
+      setTimeout(end, 400);              // safety net if the event is missed
+    };
+
+    Array.prototype.forEach.call(faqRows, function (row) {
+      var summary = row.querySelector('summary');
+      if (!summary) return;
+      summary.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (row.open) { slide(row, false); return; }
+        Array.prototype.forEach.call(faqRows, function (other) {
+          if (other !== row && other.open) slide(other, false);
+        });
+        slide(row, true);
+      });
     });
   }
 

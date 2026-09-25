@@ -307,10 +307,18 @@ textarea.input { min-height: 110px; resize: vertical; }
 .hero .lead { margin: 0 0 26px; font-size: 17px; max-width: 42ch; color: color-mix(in srgb, var(--color-text) 78%, transparent); }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .hero-figure { margin: 0; cursor: zoom-in; overflow: hidden; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
-.hero-figure img { width: 100%; height: clamp(320px, 32vw, 460px); object-fit: cover; object-position: 60% 50%; }
+/* stacked hero photos, crossfading one over the next */
+.hero-stack { position: relative; height: clamp(320px, 32vw, 460px); }
+.hero-slide {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%; object-fit: cover; object-position: 60% 50%;
+  opacity: 0; pointer-events: none;
+  transition: opacity 1100ms ease-in-out;
+}
+.hero-slide.is-active { opacity: 1; pointer-events: auto; }
 @media (max-width: 860px) {
   .hero-grid { grid-template-columns: 1fr; }
-  .hero-figure img { height: clamp(220px, 52vw, 420px); }
+  .hero-stack { height: clamp(220px, 52vw, 420px); }
 }
 
 /* Process strip (inverted band) */
@@ -391,7 +399,7 @@ textarea.input { min-height: 110px; resize: vertical; }
 .faq summary::-webkit-details-marker { display: none; }
 .faq-plus { color: var(--color-accent); transition: transform 240ms ease; display: inline-block; width: 14px; }
 .faq details[open] .faq-plus { transform: rotate(45deg); }
-.faq details p { margin: 12px 0 0 30px; font-size: 14px; color: color-mix(in srgb, var(--color-text) 75%, transparent); }
+.faq details p { font-size: 14px; color: color-mix(in srgb, var(--color-text) 75%, transparent); }
 
 /* Home closing */
 .closing { padding-top: 88px; }
@@ -524,3 +532,7 @@ textarea.input { min-height: 110px; resize: vertical; }
 
 /* honeypot — off-screen for people, visible to bots */
 .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
+/* FAQ: the answer animates open and closed (see js/main.js) */
+.faq-body { overflow: hidden; }
+.faq-body p { margin: 12px 0 0 30px; }
