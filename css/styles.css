@@ -478,15 +478,27 @@ textarea.input { min-height: 110px; resize: vertical; }
   gap: 18px; padding: 40px 24px; cursor: zoom-out;
 }
 .lightbox[hidden] { display: none; }
+.lightbox-stage {
+  /* fixed box: the photo scales inside it, so nothing below ever shifts */
+  width: min(1100px, 92vw);
+  height: min(74vh, calc(100vh - 215px));
+  display: flex; align-items: center; justify-content: center;
+}
 .lightbox-img {
-  max-width: min(1100px, 92vw); max-height: 74vh; object-fit: contain;
+  max-width: 100%; max-height: 100%; object-fit: contain;
   border-radius: var(--radius-md); cursor: default;
   animation: lbIn 260ms var(--ease-out);
 }
-.lightbox-nav { display: flex; align-items: center; gap: 18px; cursor: default; }
+/* fixed-width row: the arrows keep the same position whatever the caption says */
+.lightbox-nav {
+  width: min(760px, 92vw);
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 18px; cursor: default;
+}
+.lightbox-nav .btn { flex: none; }
 .lightbox-nav .btn { font-size: 14px; color: #e9e9ed; border-color: rgba(233, 233, 237, 0.25); }
 .lightbox-nav .btn:hover { background: rgba(233, 233, 237, 0.08); }
-.lightbox-caption { font-size: 14px; color: color-mix(in srgb, #e9e9ed 80%, transparent); text-align: center; max-width: 52ch; }
+.lightbox-caption { flex: 1; font-size: 14px; color: color-mix(in srgb, #e9e9ed 80%, transparent); text-align: center; }
 .lightbox-hint { font-size: 12px; color: color-mix(in srgb, #e9e9ed 45%, transparent); }
 @keyframes lbIn {
   from { opacity: 0; transform: scale(0.97); }
