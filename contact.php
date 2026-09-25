@@ -10,8 +10,8 @@
  */
 
 // ── settings ────────────────────────────────────────────────────────────────
-const MAIL_TO            = 'info@alexxinterieur.nl';   // where aanvragen arrive
-const MAIL_FROM          = 'website@alexxkeukens.nl';  // must be on this domain (SPF)
+const MAIL_TO            = 'info@alexxkeukens.nl';   // where aanvragen arrive
+const MAIL_FROM          = 'info@alexxkeukens.nl';     // must be a real mailbox on this domain (SPF)
 const MAIL_FROM_NAME     = 'Alexx Keukens website';
 const SEND_CONFIRMATION  = true;                       // autoresponder to the visitor
 const MAX_PER_HOUR       = 5;                          // per IP address
@@ -137,7 +137,7 @@ if (SEND_CONFIRMATION) {
         . "Met vriendelijke groet,\n"
         . "Alexx Keukens\n"
         . "Roggeweg 30G, 6534 AJ Nijmegen\n"
-        . "024 355 0330 · info@alexxinterieur.nl\n\n"
+        . "024 355 0330 · info@alexxkeukens.nl\n\n"
         . str_repeat('-', 46) . "\n"
         . "Uw aanvraag:\n\n{$body}";
 
