@@ -370,8 +370,12 @@
       submitBtn.textContent = 'Versturen…';
       fetch(endpoint, { method: 'POST', body: fd, headers: { Accept: 'application/json' } })
         .then(function (r) {
-          return r.json().catch(function () { return {}; }).then(function (data) {
-            if (!r.ok || data.ok === false) throw new Error(data.message || '');
+          return r.json().catch(function () { return null; }).then(function (data) {
+            // only a real {ok:true} from contact.php counts as sent — never
+            // assume success from a bare 200 or a non-JSON response
+            if (!r.ok || !data || data.ok !== true) {
+              throw new Error((data && data.message) || '');
+            }
             showSuccess(first);
           });
         })
