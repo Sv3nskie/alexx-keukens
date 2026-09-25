@@ -126,7 +126,18 @@ $headers = [
 // on this host sends as *.plesk.page, and those messages are quietly dropped.
 $smtp = smtp_config();
 
-if ($smtp) {
+$mode = $smtp['mode'] ?? 'smtp';
+
+if ($smtp && $mode === 'mx') {
+    [$sent, $trace] = mx_send($smtp, MAIL_TO, $onderwerp, $body, [
+        'from_name'  => MAIL_FROM_NAME,
+        'reply_to'   => $email,
+        'reply_name' => $naam,
+    ]);
+    if (!$sent) {
+        error_log('[alexx-contact] MX delivery failed for ' . $email . ' :: ' . $trace);
+    }
+} elseif ($smtp) {
     [$sent, $trace] = smtp_send($smtp, MAIL_TO, $onderwerp, $body, [
         'from_name'  => MAIL_FROM_NAME,
         'reply_to'   => $email,
@@ -161,7 +172,12 @@ if (SEND_CONFIRMATION) {
         . "Uw aanvraag:\n\n{$body}";
 
     $subject = 'Wij hebben uw aanvraag ontvangen — Alexx Keukens';
-    if ($smtp) {
+    if ($smtp && $mode === 'mx') {
+        mx_send($smtp, $email, $subject, $bevestiging, [
+            'from_name' => 'Alexx Keukens',
+            'reply_to'  => MAIL_TO,
+        ]);
+    } elseif ($smtp) {
         smtp_send($smtp, $email, $subject, $bevestiging, [
             'from_name' => 'Alexx Keukens',
             'reply_to'  => MAIL_TO,

@@ -380,7 +380,12 @@
           });
         })
         .catch(function (err) {
-          if (err && err.message) errorEl.firstChild.nodeValue = err.message + ' ';
+          var slot = errorEl.querySelector('[data-error-text]');
+          if (slot) {
+            slot.textContent = (err && err.message)
+              ? err.message.replace(/\s*(Probeer het.*|of bel.*|\s*024\s*355\s*0330\.?)$/, '')
+              : 'Versturen is niet gelukt. Probeer het nog eens';
+          }
           errorEl.hidden = false;
         })
         .then(function () {

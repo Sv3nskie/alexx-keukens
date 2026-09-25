@@ -19,7 +19,15 @@ function smtp_config(): ?array
         return null;
     }
     $cfg = include $path;
-    return is_array($cfg) && !empty($cfg['host']) && !empty($cfg['user']) ? $cfg : null;
+    if (!is_array($cfg)) {
+        return null;
+    }
+    // 'mx' mode needs no credentials at all; 'smtp' mode needs a mailbox
+    $mode = $cfg['mode'] ?? 'smtp';
+    if ($mode === 'mx') {
+        return $cfg;
+    }
+    return !empty($cfg['host']) && !empty($cfg['user']) ? $cfg : null;
 }
 
 /** Read one SMTP reply (handles multi-line 250- continuations). */
@@ -53,13 +61,37 @@ function smtp_encode(string $text): string
         : $text;
 }
 
+/** IPv4 addresses for a host — SPF here only covers the IPv4 address. */
+function smtp_ipv4_for(string $host): array
+{
+    $recs = @dns_get_record($host, DNS_A) ?: [];
+    $ips = array_column($recs, 'ip');
+    return $ips ?: [$host];            // let the resolver decide if there is no A record
+}
+
+/** Mail servers for a recipient domain, best first. */
+function smtp_hosts_for(string $address): array
+{
+    $domain = substr(strrchr($address, '@') ?: '', 1);
+    if ($domain === '') {
+        return [];
+    }
+    $mx = [];
+    $weights = [];
+    if (getmxrr($domain, $mx, $weights) && $mx) {
+        array_multisort($weights, $mx);
+        return $mx;
+    }
+    return [$domain];                  // fall back to the domain's own A record
+}
+
 /**
  * @return array{0: bool, 1: string}  success, and a short transcript for the log
  */
 function smtp_send(array $cfg, string $to, string $subject, string $body, array $opts = []): array
 {
-    $host = $cfg['host'];
-    $port = (int) ($cfg['port'] ?? 587);
+    $host = $opts['host'] ?? $cfg['host'] ?? '';
+    $port = (int) ($opts['port'] ?? $cfg['port'] ?? 587);
     $from = $cfg['from'] ?? $cfg['user'];
     $fromName = $opts['from_name'] ?? ($cfg['from_name'] ?? '');
     $replyTo = $opts['reply_to'] ?? '';
@@ -67,7 +99,14 @@ function smtp_send(array $cfg, string $to, string $subject, string $body, array 
     $log = [];
 
     $transport = $port === 465 ? 'ssl://' : 'tcp://';
-    $fp = @stream_socket_client($transport . $host . ':' . $port, $errno, $errstr, 15);
+    // Connect over IPv4. This host also has an IPv6 address, which the domain's
+    // SPF record does not cover, and Gmail rejects the mail outright:
+    //   550-5.7.26 SPF [alexxkeukens.nl] with ip: [2a01:448:...] = did not pass
+    $target = $opts['connect_ip'] ?? $host;
+    $fp = @stream_socket_client($transport . $target . ':' . $port, $errno, $errstr, 15,
+        STREAM_CLIENT_CONNECT, stream_context_create([
+            'ssl' => ['peer_name' => $host],
+        ]));
     if (!$fp) {
         return [false, 'connect failed: ' . $errstr];
     }
@@ -83,10 +122,13 @@ function smtp_send(array $cfg, string $to, string $subject, string $body, array 
             && smtp_cmd($fp, 'EHLO ' . $helo, '250', $log);
     }
 
+    if ($ok && !empty($cfg['user']) && !empty($cfg['pass']) && empty($opts['no_auth'])) {
+        $ok = smtp_cmd($fp, 'AUTH LOGIN', '334', $log)
+            && smtp_cmd($fp, base64_encode($cfg['user']), '334', $log, true)
+            && smtp_cmd($fp, base64_encode($cfg['pass']), '235', $log, true);
+    }
+
     $ok = $ok
-        && smtp_cmd($fp, 'AUTH LOGIN', '334', $log)
-        && smtp_cmd($fp, base64_encode($cfg['user']), '334', $log, true)
-        && smtp_cmd($fp, base64_encode($cfg['pass']), '235', $log, true)
         && smtp_cmd($fp, 'MAIL FROM:<' . $from . '>', '250', $log)
         && smtp_cmd($fp, 'RCPT TO:<' . $to . '>', '250', $log)
         && smtp_cmd($fp, 'DATA', '354', $log);
@@ -117,4 +159,27 @@ function smtp_send(array $cfg, string $to, string $subject, string $body, array 
     fclose($fp);
 
     return [$ok, implode(' | ', array_slice($log, -6))];
+}
+
+/**
+ * Deliver straight to the recipient's own mail servers — no mailbox, no
+ * password, nothing that can be rotated out from under the site. SPF passes
+ * because the domain's record authorises this web server.
+ *
+ * @return array{0: bool, 1: string}
+ */
+function mx_send(array $cfg, string $to, string $subject, string $body, array $opts = []): array
+{
+    $last = 'no mail server found';
+    foreach (smtp_hosts_for($to) as $host) {
+        foreach (smtp_ipv4_for($host) as $ip) {
+            [$ok, $trace] = smtp_send($cfg, $to, $subject, $body,
+                $opts + ['host' => $host, 'connect_ip' => $ip, 'port' => 25, 'no_auth' => true]);
+            if ($ok) {
+                return [true, $host . ' (' . $ip . '): ok'];
+            }
+            $last = $host . ' (' . $ip . '): ' . $trace;
+        }
+    }
+    return [false, $last];
 }
