@@ -73,8 +73,15 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
     respond(405, false, 'Methode niet toegestaan.');
 }
 
-// Honeypot: a field hidden from people, irresistible to bots.
-if (trim((string) ($_POST['bedrijf'] ?? '')) !== '') {
+// Honeypot: a field hidden from people, irresistible to bots. Always logged,
+// because a browser auto-filling it looks identical to a bot from here and
+// the visitor would otherwise see a "sent" screen while nothing was sent.
+$honey = trim((string) ($_POST['hp_x9k'] ?? $_POST['bedrijf'] ?? ''));
+if ($honey !== '') {
+    error_log(sprintf('[alexx-contact] honeypot tripped from %s (naam=%s, value=%s)',
+        $_SERVER['REMOTE_ADDR'] ?? '?',
+        mb_substr((string) ($_POST['naam'] ?? ''), 0, 40),
+        mb_substr($honey, 0, 40)));
     respond(200, true); // play along silently
 }
 

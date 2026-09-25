@@ -97,9 +97,12 @@
            Without it the success state is shown client-side only (preview mode). -->
       <form data-contact-form data-endpoint="/contact.php" method="post" action="/contact.php">
         <h3>Gratis ontwerp &amp; prijsopgave</h3>
+        <!-- honeypot: name and label chosen so browser autofill cannot classify it.
+             A field called "bedrijf" got auto-filled by Chrome and every real
+             submission was silently treated as spam. -->
         <div class="hp" aria-hidden="true">
-          <label for="c-bedrijf">Bedrijf (niet invullen)</label>
-          <input id="c-bedrijf" class="input" type="text" name="bedrijf" tabindex="-1" autocomplete="off">
+          <label for="c-hp">Niet invullen</label>
+          <input id="c-hp" class="input" type="text" name="hp_x9k" tabindex="-1" autocomplete="off" data-lpignore="true">
         </div>
         <div class="field"><label for="c-naam">Uw naam</label><input id="c-naam" class="input" name="naam" required autocomplete="name" placeholder="Voor- en achternaam"></div>
         <div class="field-row">
