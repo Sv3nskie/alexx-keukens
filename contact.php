@@ -17,6 +17,8 @@ const SEND_CONFIRMATION  = true;                       // autoresponder to the v
 const MAX_PER_HOUR       = 5;                          // per IP address
 const SUCCESS_REDIRECT   = '/contact?verzonden=1';     // used when JavaScript is off
 
+require_once __DIR__ . '/lib/mailer.php';
+
 // ── helpers ─────────────────────────────────────────────────────────────────
 function wants_json(): bool {
     return stripos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false;
@@ -120,10 +122,27 @@ $headers = [
     'X-Mailer: alexxkeukens.nl',
 ];
 
-$sent = @mail(MAIL_TO, $onderwerp, $body, implode("\r\n", $headers), '-f' . MAIL_FROM);
+// Prefer authenticated SMTP through the mail provider: the local mail system
+// on this host sends as *.plesk.page, and those messages are quietly dropped.
+$smtp = smtp_config();
+
+if ($smtp) {
+    [$sent, $trace] = smtp_send($smtp, MAIL_TO, $onderwerp, $body, [
+        'from_name'  => MAIL_FROM_NAME,
+        'reply_to'   => $email,
+        'reply_name' => $naam,
+    ]);
+    if (!$sent) {
+        error_log('[alexx-contact] SMTP failed for ' . $email . ' :: ' . $trace);
+    }
+} else {
+    $sent = @mail(MAIL_TO, $onderwerp, $body, implode("\r\n", $headers), '-f' . MAIL_FROM);
+    if (!$sent) {
+        error_log('[alexx-contact] mail() failed for ' . $email);
+    }
+}
 
 if (!$sent) {
-    error_log('[alexx-contact] mail() failed for ' . $email);
     respond(500, false, 'Versturen is niet gelukt. Probeer het nog eens of bel 024 355 0330.');
 }
 
@@ -141,18 +160,21 @@ if (SEND_CONFIRMATION) {
         . str_repeat('-', 46) . "\n"
         . "Uw aanvraag:\n\n{$body}";
 
-    @mail(
-        sprintf('%s <%s>', $naam, $email),
-        'Wij hebben uw aanvraag ontvangen — Alexx Keukens',
-        $bevestiging,
-        implode("\r\n", [
+    $subject = 'Wij hebben uw aanvraag ontvangen — Alexx Keukens';
+    if ($smtp) {
+        smtp_send($smtp, $email, $subject, $bevestiging, [
+            'from_name' => 'Alexx Keukens',
+            'reply_to'  => MAIL_TO,
+        ]);
+    } else {
+        @mail($email, $subject, $bevestiging, implode("
+", [
             'From: ' . $from,
             'Reply-To: ' . MAIL_TO,
             'Content-Type: text/plain; charset=UTF-8',
             'MIME-Version: 1.0',
-        ]),
-        '-f' . MAIL_FROM
-    );
+        ]), '-f' . MAIL_FROM);
+    }
 }
 
 respond(200, true);

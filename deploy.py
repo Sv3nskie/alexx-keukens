@@ -35,7 +35,9 @@ LOCAL = Path(__file__).resolve().parent
 def wanted(p: Path) -> bool:
     if any(part in EXCLUDE_NAMES for part in p.relative_to(LOCAL).parts):
         return False
-    if p.name.startswith('_backup-'):
+    # skip the whole backup tree, not just files literally named _backup-*
+    if any(part.startswith('_backup-') or part.startswith('_diag-')
+           for part in p.relative_to(LOCAL).parts):
         return False
     return p.suffix.lower() not in EXCLUDE_SUFFIX
 
@@ -121,19 +123,47 @@ def main() -> int:
 
     ensure_dir(ftp, args.dir)
     made: set[str] = set()
+    failed: list[str] = []
+
     for p in files:
         rel = p.relative_to(LOCAL).as_posix()
         remote = f'{args.dir}/{rel}'
         parent = remote.rsplit('/', 1)[0]
-        if parent not in made:
-            ensure_dir(ftp, parent)
-            made.add(parent)
-        with open(p, 'rb') as fh:
-            ftp.storbinary(f'STOR {remote}', fh)
-        print(f'  up  {rel}  ({p.stat().st_size/1024:.0f} KB)')
 
-    ftp.quit()
-    print('\ndone.')
+        # The control connection drops now and then on this host, which used to
+        # abandon the rest of the upload silently. Reconnect and retry instead.
+        for attempt in (1, 2, 3):
+            try:
+                if parent not in made:
+                    ensure_dir(ftp, parent)
+                    made.add(parent)
+                with open(p, 'rb') as fh:
+                    ftp.storbinary(f'STOR {remote}', fh)
+                print(f'  up  {rel}  ({p.stat().st_size/1024:.0f} KB)')
+                break
+            except Exception as e:
+                print(f'  !!  {rel} attempt {attempt}: {e}')
+                if attempt == 3:
+                    failed.append(rel)
+                    break
+                try:
+                    ftp.close()
+                except Exception:
+                    pass
+                ftp = connect(host, user, password)
+                made.clear()
+
+    try:
+        ftp.quit()
+    except Exception:
+        pass
+
+    if failed:
+        print()
+        print('FAILED to upload ' + str(len(failed)) + ' file(s): ' + ', '.join(failed))
+        return 1
+    print()
+    print('done - ' + str(len(files)) + ' files uploaded.')
     return 0
 
 
