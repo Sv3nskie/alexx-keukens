@@ -13,6 +13,27 @@ js/main.js      nav drawer, infinite gallery, lightbox, contact form
 img/            photos (placeholders!), favicon
 ```
 
+## Deploy to mijndomein (Plesk)
+
+Live host: **alexxkeukens.nl** · doc root `httpdocs` · PHP 8.5 · server `213.249.67.30`.
+
+```bash
+FTP_HOST=213.249.67.30 FTP_USER=<ftp-account> FTP_PASS=<password> python deploy.py --backup
+```
+
+`deploy.py` uploads over FTPS (encrypted) and skips the repo-only files
+(`README.md`, `deploy.py`, `htaccess-alexxinterieur.txt`, `.nojekyll`). `--dry-run`
+lists what it would send; `--backup` pulls the current remote files down first.
+
+**Old domain.** `alexxinterieur.nl` 301s to the new site. If it is added in Plesk as an
+*alias* of alexxkeukens.nl, section 1 of `.htaccess` already handles it. If it gets its
+own document root, upload `htaccess-alexxinterieur.txt` there as `.htaccess` instead.
+The old site was DotNetNuke, so the map covers `Keukens.aspx`, `Kasten.aspx`,
+`Maatwerk.aspx`, `Contact.aspx`, `Klantenservice.aspx` and sends everything else home.
+
+**Contact form.** `contact.php` mails to `MAIL_TO` at the top of that file. `MAIL_FROM`
+must be a real mailbox on the sending domain or SPF/DMARC will reject the mail.
+
 ## Preview on GitHub Pages
 
 1. Create a new repo and push this folder as its root.

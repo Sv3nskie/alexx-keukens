@@ -1,0 +1,99 @@
+# ============================================================================
+# Alexx Keukens — alexxkeukens.nl
+# Apache config for the document root (httpdocs). Plesk / mijndomein.
+# ============================================================================
+
+Options -Indexes
+DirectoryIndex index.html
+AddDefaultCharset UTF-8
+ErrorDocument 404 /404.html
+
+<IfModule mod_rewrite.c>
+RewriteEngine On
+
+# ----------------------------------------------------------------------------
+# 1. Old domain -> new domain
+#    Active only when alexxinterieur.nl is pointed at THIS document root
+#    (as an alias). If it gets its own docroot instead, use the separate
+#    htaccess-alexxinterieur.txt there and these rules simply never match.
+#    Old site was DotNetNuke, so every old URL ends in .aspx.
+# ----------------------------------------------------------------------------
+RewriteCond %{HTTP_HOST} ^(www\.)?alexxinterieur\.nl$ [NC]
+RewriteRule ^Keukens\.aspx$            https://alexxkeukens.nl/keukens [R=301,L,NC]
+RewriteCond %{HTTP_HOST} ^(www\.)?alexxinterieur\.nl$ [NC]
+RewriteRule ^(Kasten|Maatwerk)\.aspx$  https://alexxkeukens.nl/kasten [R=301,L,NC]
+RewriteCond %{HTTP_HOST} ^(www\.)?alexxinterieur\.nl$ [NC]
+RewriteRule ^(Contact|Klantenservice)\.aspx$ https://alexxkeukens.nl/contact [R=301,L,NC]
+# Home, Projecten, Overons, Acties, Links, privacy, terms, Algemenevoorwaarden,
+# login and every DotNetNuke asset path have no counterpart -> homepage.
+RewriteCond %{HTTP_HOST} ^(www\.)?alexxinterieur\.nl$ [NC]
+RewriteRule ^ https://alexxkeukens.nl/ [R=301,L]
+
+# ----------------------------------------------------------------------------
+# 2. Canonical host and scheme
+# ----------------------------------------------------------------------------
+# Force HTTPS (skip while no certificate is installed yet — see README)
+RewriteCond %{HTTPS} !=on
+RewriteCond %{HTTP:X-Forwarded-Proto} !https
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+# www -> non-www
+RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+RewriteRule ^ https://%1%{REQUEST_URI} [R=301,L]
+
+# ----------------------------------------------------------------------------
+# 3. Clean URLs:  /keukens  instead of  /keukens.html
+# ----------------------------------------------------------------------------
+# index.html -> /
+RewriteCond %{THE_REQUEST} \s/+index\.html[\s?] [NC]
+RewriteRule ^ / [R=301,L]
+
+# anything.html -> /anything
+RewriteCond %{THE_REQUEST} \s/+(.+?)\.html[\s?] [NC]
+RewriteRule ^ /%1 [R=301,L]
+
+# serve /anything from anything.html
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}\.html -f
+RewriteRule ^(.+?)/?$ $1.html [L]
+</IfModule>
+
+# ----------------------------------------------------------------------------
+# 4. Compression
+# ----------------------------------------------------------------------------
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/css text/xml \
+    application/javascript application/json image/svg+xml
+</IfModule>
+
+# ----------------------------------------------------------------------------
+# 5. Caching — photos and assets are content-stable; HTML must stay fresh
+# ----------------------------------------------------------------------------
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType image/jpeg              "access plus 1 year"
+  ExpiresByType image/png               "access plus 1 year"
+  ExpiresByType image/svg+xml           "access plus 1 year"
+  ExpiresByType text/css                "access plus 1 month"
+  ExpiresByType application/javascript  "access plus 1 month"
+  ExpiresByType text/html               "access plus 0 seconds"
+</IfModule>
+
+<IfModule mod_headers.c>
+  <FilesMatch "\.(jpg|jpeg|png|svg|webp|woff2)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set X-Frame-Options "SAMEORIGIN"
+</IfModule>
+
+# ----------------------------------------------------------------------------
+# 6. Keep dot-files and the deploy log out of reach
+# ----------------------------------------------------------------------------
+<FilesMatch "^\.|\.(md|log|bak)$">
+  Require all denied
+</FilesMatch>

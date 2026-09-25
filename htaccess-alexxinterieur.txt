@@ -1,0 +1,31 @@
+# ============================================================================
+# alexxinterieur.nl — redirect-only document root
+#
+# Use this file ONLY if alexxinterieur.nl is added in Plesk as its own domain
+# with its own document root. Upload it there as ".htaccess" (with the dot)
+# and put nothing else in that folder.
+#
+# If instead alexxinterieur.nl is added as an ALIAS of alexxkeukens.nl, do not
+# use this file — the main .htaccess already handles it (section 1).
+#
+# The old site was DotNetNuke; every page ended in .aspx.
+# ============================================================================
+
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+RewriteEngine On
+
+# --- pages that have a real counterpart on the new site ---------------------
+RewriteRule ^Keukens\.aspx$                   https://alexxkeukens.nl/keukens [R=301,L,NC]
+RewriteRule ^Kasten\.aspx$                    https://alexxkeukens.nl/kasten  [R=301,L,NC]
+RewriteRule ^Maatwerk\.aspx$                  https://alexxkeukens.nl/kasten  [R=301,L,NC]
+RewriteRule ^Contact\.aspx$                   https://alexxkeukens.nl/contact [R=301,L,NC]
+RewriteRule ^Klantenservice\.aspx$            https://alexxkeukens.nl/contact [R=301,L,NC]
+
+# --- retired pages: Home, Projecten, Overons, Acties, Links, privacy, terms,
+#     Algemenevoorwaarden, login, and all /portals/ + /desktopmodules/ assets.
+#     The new site has four pages, so these go to the homepage rather than
+#     carrying a path that would 404 there.
+RewriteRule ^ https://alexxkeukens.nl/ [R=301,L]
+</IfModule>

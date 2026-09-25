@@ -198,8 +198,14 @@
       submitBtn.disabled = true;
       submitBtn.textContent = 'Versturen…';
       fetch(endpoint, { method: 'POST', body: fd, headers: { Accept: 'application/json' } })
-        .then(function (r) { if (!r.ok) throw new Error(r.statusText); showSuccess(first); })
-        .catch(function () {
+        .then(function (r) {
+          return r.json().catch(function () { return {}; }).then(function (data) {
+            if (!r.ok || data.ok === false) throw new Error(data.message || '');
+            showSuccess(first);
+          });
+        })
+        .catch(function (err) {
+          if (err && err.message) errorEl.firstChild.nodeValue = err.message + ' ';
           errorEl.hidden = false;
         })
         .then(function () {
@@ -207,6 +213,12 @@
           submitBtn.textContent = submitLabel;
         });
     });
+
+    // visitor arrived back from contact.php without JavaScript on the first pass
+    if (/[?&]verzonden=1/.test(location.search)) {
+      showSuccess('alvast');
+      history.replaceState(null, '', location.pathname);
+    }
 
     if (resetBtn) resetBtn.addEventListener('click', function () {
       form.reset();
