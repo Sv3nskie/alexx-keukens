@@ -183,8 +183,7 @@ if (SEND_CONFIRMATION) {
             'reply_to'  => MAIL_TO,
         ]);
     } else {
-        @mail($email, $subject, $bevestiging, implode("
-", [
+        @mail($email, $subject, $bevestiging, implode("\r\n", [
             'From: ' . $from,
             'Reply-To: ' . MAIL_TO,
             'Content-Type: text/plain; charset=UTF-8',
