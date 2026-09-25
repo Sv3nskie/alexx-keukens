@@ -115,51 +115,84 @@
     window.addEventListener('load', measure);
 
     /* ---- autoplay -------------------------------------------------------
-       Advances one card at a time. Pauses while the visitor is pointing at
-       it, dragging it, tabbing through it, reading a photo full screen, or
+       A slow continuous drift rather than a card-by-card jump: the track is
+       nudged a few hundredths of a pixel every frame, timed off the clock so
+       the speed is the same on any refresh rate. The loop normaliser already
+       keeps it seamless. Pauses while the visitor is pointing at it,
+       dragging it, tabbing through it, reading a photo full screen, or
        looking at another tab. Off entirely for reduced-motion users.       */
-    var STEP_MS = 3800;
-    var timer = 0;
-    var held = 0;                    // >0 while the visitor is interacting
+    var SPEED = 28;                  // pixels per second
+    var raf2 = 0, last = 0, posF = null;   // posF: scrollLeft is rounded on
+                                           // write, so fractions are kept here
+    var held = 0;
     var resumeT = 0;
     var reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
 
+    // One flag per reason to pause. A shared counter with shared timers let a
+    // later release cancel an earlier one, which could strand the drift.
+    var pHover = false, pFocus = false, pDrag = false, pWheel = false, pArrow = false;
+    var dragT = 0, wheelT = 0, arrowT = 0;
+
     var canRun = function () {
-      return !held && !document.hidden && !document.body.classList.contains('lb-open');
+      return !pHover && !pFocus && !pDrag && !pWheel && !pArrow &&
+             !document.hidden && !document.body.classList.contains('lb-open');
     };
-    var tick = function () { if (canRun()) go(1); };
+
+    var frame = function (ts) {
+      raf2 = requestAnimationFrame(frame);
+      var dt = last ? ts - last : 0;
+      last = ts;                     // keep the clock fresh even while paused
+      if (!canRun() || dt <= 0 || dt > 100) { posF = null; return; }
+      // re-sync after a swipe, an arrow, or the loop normaliser moved us
+      if (posF === null || Math.abs(posF - track.scrollLeft) > 2) posF = track.scrollLeft;
+      posF += SPEED * dt / 1000;
+      track.scrollLeft = posF;
+    };
+
     var start = function () {
-      if (reduce.matches || timer) return;
-      timer = setInterval(tick, STEP_MS);
+      if (reduce.matches || raf2) return;
+      last = 0; posF = null;
+      raf2 = requestAnimationFrame(frame);
     };
-    var stop = function () { clearInterval(timer); timer = 0; };
-    // restart the countdown so a manual move isn't followed instantly by one
-    function nudge() { stop(); start(); }
+    var stop = function () { cancelAnimationFrame(raf2); raf2 = 0; };
 
-    var hold = function () { held++; };
-    var release = function (delay) {
-      clearTimeout(resumeT);
-      resumeT = setTimeout(function () { held = Math.max(0, held - 1); nudge(); }, delay || 0);
+    // let an arrow's smooth scroll finish before the drift takes over again
+    function nudge() {
+      pArrow = true;
+      clearTimeout(arrowT);
+      arrowT = setTimeout(function () { pArrow = false; }, 700);
+    }
+
+    wrap.addEventListener('mouseenter', function () { pHover = true; });
+    wrap.addEventListener('mouseleave', function () { pHover = false; });
+    // Only keyboard focus should pause: clicking an arrow focuses it too, and
+    // that focus outlives the mouse leaving, which would strand the drift.
+    wrap.addEventListener('focusin', function (e) {
+      var kb = false;
+      try { kb = e.target.matches(':focus-visible'); } catch (err) { kb = false; }
+      pFocus = kb;
+    });
+    wrap.addEventListener('focusout', function () { pFocus = false; });
+
+    var dragStart = function () { pDrag = true; clearTimeout(dragT); };
+    var dragEnd = function () {
+      clearTimeout(dragT);
+      dragT = setTimeout(function () { pDrag = false; }, 1200);
     };
+    track.addEventListener('pointerdown', dragStart);
+    window.addEventListener('pointerup', dragEnd);
+    track.addEventListener('touchstart', dragStart, { passive: true });
+    track.addEventListener('touchend', dragEnd, { passive: true });
 
-    wrap.addEventListener('mouseenter', hold);
-    wrap.addEventListener('mouseleave', function () { release(0); });
-    wrap.addEventListener('focusin', hold);
-    wrap.addEventListener('focusout', function () { release(0); });
-    // touch / trackpad: hold while dragging, resume shortly after letting go
-    track.addEventListener('pointerdown', hold);
-    window.addEventListener('pointerup', function () { release(1200); });
-    track.addEventListener('touchstart', hold, { passive: true });
-    track.addEventListener('touchend', function () { release(1200); }, { passive: true });
-    var wheelT = 0;
     track.addEventListener('wheel', function () {
-      if (!wheelT) hold();
+      pWheel = true;
       clearTimeout(wheelT);
-      wheelT = setTimeout(function () { wheelT = 0; release(0); }, 700);
+      wheelT = setTimeout(function () { pWheel = false; }, 700);
     }, { passive: true });
 
-    document.addEventListener('visibilitychange', function () { if (!document.hidden) nudge(); });
-    if (reduce.addEventListener) reduce.addEventListener('change', function () { reduce.matches ? stop() : start(); });
+    if (reduce.addEventListener) reduce.addEventListener('change', function () {
+      reduce.matches ? stop() : start();
+    });
 
     start();
   }

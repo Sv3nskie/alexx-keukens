@@ -536,3 +536,8 @@ textarea.input { min-height: 110px; resize: vertical; }
 /* FAQ: the answer animates open and closed (see js/main.js) */
 .faq-body { overflow: hidden; }
 .faq-body p { margin: 12px 0 0 30px; }
+
+/* Touch devices swipe the strip directly, so the arrows only get in the way */
+@media (max-width: 800px) {
+  .gal-arrow { display: none; }
+}
